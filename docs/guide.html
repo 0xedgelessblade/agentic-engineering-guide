@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Engineering 實戰指南</title>
+<style>
+body {
+  font-family: 'Noto Sans TC', -apple-system, sans-serif;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  line-height: 1.75;
+  color: #1C1917;
+  background: #fff;
+}
+h1 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; }
+h2 { font-size: 20px; font-weight: 700; margin: 28px 0 12px; }
+blockquote {
+  border-left: 3px solid #D6D3D1;
+  padding: 8px 16px;
+  margin: 8px 0;
+  background: #FAFAF9;
+  color: #44403C;
+  font-style: normal;
+}
+hr { border: none; border-top: 1px solid #E7E5E4; margin: 24px 0; }
+strong { font-weight: 600; }
+pre {
+  background: #F5F5F4;
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+code {
+  background: #F5F5F4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+pre code { background: none; padding: 0; }
+ul, ol { padding-left: 24px; }
+li { margin-bottom: 4px; }
+a { color: #2563EB; text-decoration: none; }
+a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Agentic Engineering 實戰指南</h1>
+
+<blockquote>
+<p>基於 SysLS 的文章 <em>"How To Be A World-Class Agentic Engineer"</em> 核心觀點，結合實戰經驗重新編寫。</p>
+<p>這份文件講<strong>觀念</strong>。實際操作請用 <code>skill/</code> 裡的 optimizer，丟給 AI 執行就好。</p>
+</blockquote>
+
+<hr>
+
+<h2>你的 Agent 為什麼表現不穩定</h2>
+
+<p>不是你的 harness 不對、不是你的 plugin 不夠、不是你的 terminal 有問題。</p>
+
+<p>問題幾乎永遠是同一個：<strong>你餵給 agent 太多它不需要的資訊。</strong></p>
+
+<hr>
+
+<h2>觀念一：Context Is Everything</h2>
+
+<p>Agent 的表現直接取決於它在執行任務時「腦袋裡裝了什麼」。裝太多 = 表現變差。</p>
+
+<p>你要它寫一個 hangman game，結果它腦袋裡同時塞滿了「26 個 session 前的 memory」、「怎麼發通知訊息」、「HTML 的 CSS 偏好」。它當然表現不好。</p>
+
+<p>Context bloat（上下文膨脹）的常見來源：過多的 plugin 注入、巨型 CLAUDE.md、memory system 殘留、不分場合載入所有規則。</p>
+
+<p><strong>核心動作：只給 agent 完成當前任務所需的資訊，其他一概不給。</strong></p>
+
+<hr>
+
+<h2>觀念二：CLAUDE.md 是 Router，不是百科全書</h2>
+
+<p>原文最重要的一句實作建議：</p>
+
+<blockquote>
+<p>Treat your CLAUDE.md as a logical, nested directory of where to find context given a scenario and an outcome. It should be as barebones as possible, and only contain the IF-ELSE of where to go to seek the context.</p>
+</blockquote>
+
+<p><strong>CLAUDE.md 應該長這樣：</strong></p>
+
+<pre><code>啟動流程 → 讀哪些檔案來恢復 context
+安全底線 → 絕對不能做的事（永遠生效）
+路由規則 → 寫程式時讀 A，發訊息時讀 B，寫內容時讀 C</code></pre>
+
+<p><strong>不應該長這樣：</strong></p>
+
+<pre><code>啟動流程（50 行）+ 任務流程（80 行）+ 寫程式規則（100 行）
++ 測試規則（60 行）+ 發送規則（40 行）+ HTML 偏好（30 行）
++ 寫作風格（50 行）+ 經驗教訓（200 行）= 600+ 行</code></pre>
+
+<p>第一種 CLAUDE.md 大約 50 行。Agent 寫程式時只多讀一份 coding-rules.md。<br>
+第二種 CLAUDE.md 600 行。Agent 不管做什麼都要先吞 600 行。</p>
+
+<p>差異是 context 的乾淨程度，直接影響 agent 的專注力和表現。</p>
+
+<hr>
+
+<h2>觀念三：Rules vs Skills — 不要搞混</h2>
+
+<ul>
+<li><strong>Rule = 偏好（preference）</strong>：「不要用 any type」「變數名用 camelCase」「覆蓋前要問我」</li>
+<li><strong>Skill = 配方（recipe）</strong>：「部署的完整步驟是 1→2→3→4→5」「收到截圖的處理流程」</li>
+</ul>
+
+<p>Rule 告訴 agent「注意什麼」。Skill 告訴 agent「怎麼做某件事」。</p>
+
+<p>混在一起 → agent 搞不清楚哪些是限制、哪些是流程。</p>
+
+<hr>
+
+<h2>觀念四：疊加 → 矛盾 → 清理，是自然循環</h2>
+
+<p>你會不斷加 rule。加到某個程度，它們會開始互相矛盾、產生冗餘、或者過時。然後 agent 表現又開始變差。</p>
+
+<p><strong>這不是 bug，這是必然的。</strong> 原文叫它 "spa day"：定期讓 agent 掃描你所有的 rules 和 skills，找出矛盾和冗餘，提議精簡。</p>
+
+<p>循環就是：<strong>用 → 加 rule → 表現變好 → 繼續加 → 表現變差 → 清理 → 表現恢復 → 重複</strong>。</p>
+
+<hr>
+
+<h2>觀念五：Compaction 後的 Context 恢復</h2>
+
+<p>長對話中 Claude 會壓縮（compaction）前面的對話。壓縮後它可能「忘記」重要的 context。</p>
+
+<p>解法很簡單：在 CLAUDE.md 的啟動流程中寫清楚「compaction 後重新讀哪些檔案」。這樣每次壓縮後它都知道怎麼恢復狀態。</p>
+
+<hr>
+
+<h2>觀念六：不要焦慮，不需要追新工具</h2>
+
+<blockquote>
+<p>If something truly is ground-breaking and extended agentic use-cases in a meaningful way, it will be incorporated into the base products of the foundation companies in due time.</p>
+</blockquote>
+
+<p>Skills、memory、subagents——這些都是社群先發明，然後被 Claude / Codex 官方吸收的。真正有用的功能不需要你去找，它會自己來。</p>
+
+<p>你只需要定期更新 CLI，看 release notes。精力花在理解自己的工作流程、觀察 agent 犯錯、轉化成 rules 和 skills 就夠了。</p>
+
+<hr>
+
+<h2>怎麼用這個 Repo</h2>
+
+<ol>
+<li>把 <code>skill/agentic-setup-optimizer/</code> 放進你的 skills 目錄</li>
+<li>跟 agent 說：<strong>「優化我的設定」</strong></li>
+<li>AI 自動掃描 → 診斷 → 建議 → 你確認後執行</li>
+</ol>
+
+<p>就這樣。概念你已經懂了，剩下的讓 AI 做。</p>
+
+<hr>
+
+<h2>附錄</h2>
+
+<p>本指南基於 SysLS 的 <em>"How To Be A World-Class Agentic Engineer"</em>。原文還涵蓋了 sycophancy 利用（對抗式 agent 架構）、task contracts、永不停機的 agent 等進階主題，有興趣可以找原文來看。</p>
+
+</body>
+</html>
