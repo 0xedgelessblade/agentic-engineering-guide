@@ -1,3 +1,13 @@
+---
+name: agentic-setup-optimizer
+description: >
+  互動式 Agent 設定優化器。掃描使用者現有的 CLAUDE.md / rules / skills，診斷問題，產出優化建議，執行重組。
+  觸發語句：「優化我的設定」、「優化 CLAUDE.md」、「檢查我的 agent 設定」、「setup optimizer」、
+  「optimize my setup」、「我的 agent 表現變差了」、「為什麼 agent 越來越笨」、
+  「清理 rules」、「整理 skills」、「spa day」。
+  即使使用者只是說「設定太亂了」或「幫我整理一下 agent」，也應觸發。
+  任何跟「診斷或優化 AI agent 設定架構」相關的請求都應觸發此技能。
+---
 # Agentic Setup Optimizer
 
 > 互動式 Agent 設定優化器。掃描使用者現有的 CLAUDE.md / rules / skills，診斷問題，產出優化建議，執行重組。
